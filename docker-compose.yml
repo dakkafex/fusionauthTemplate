@@ -1,7 +1,7 @@
 version: '2.4'
 
 services:
-  postgres:
+  db:
     image: postgres:9.6
     environment:
       PGDATA: /var/lib/postgresql/data/pgdata
@@ -11,19 +11,17 @@ services:
 #    ports:
 #      - 5432:5432
     networks:
-      ${SERVICE_NAME}:
-        aliases:
-          - datamind
+      - db
     restart: unless-stopped
     volumes:
-      - ${SERVICE_NAME}_data:/var/lib/postgresql/data
+      - ${WHALE_NAME}_db_data:/var/lib/postgresql/data
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
     depends_on:
-      - postgres
+      - db
     environment:
-      DATABASE_URL: jdbc:postgresql://datamind:5432/fusionauth
+      DATABASE_URL: jdbc:postgresql://db:5432/fusionauth
       DATABASE_ROOT_USER: ${POSTGRES_USER}
       DATABASE_ROOT_PASSWORD: ${POSTGRES_PASSWORD}
       DATABASE_USER: ${DATABASE_USER}
@@ -33,17 +31,13 @@ services:
       FUSIONAUTH_URL: http://fusionauth:9011
       FUSIONAUTH_RUNTIME_MODE: development
     networks:
-     - ${SERVICE_NAME}
+     - db
     restart: unless-stopped
     ports:
       - 9011:9011
     volumes:
-      - ${SERVICE_NAME}_fa_config:/usr/local/fusionauth/config
-
-networks:
-  ${SERVICE_NAME}:
-    driver: bridge
+      - ${WHALE_NAME}_fa_config:/usr/local/fusionauth/config
 
 volumes:
-  ${SERVICE_NAME}_data:
-  ${SERVICE_NAME}_fa_config:
+  ${WHALE_NAME}_db_data:
+  ${WHALE_NAME}_fa_config:
