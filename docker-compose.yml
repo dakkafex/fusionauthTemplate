@@ -14,7 +14,7 @@ services:
       - db
     restart: unless-stopped
     volumes:
-      - ${WHALE_NAME}_db_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
@@ -36,8 +36,12 @@ services:
     ports:
       - 9011:9011
     volumes:
-      - ${WHALE_NAME}_fa_config:/usr/local/fusionauth/config
+      - fa_config:/usr/local/fusionauth/config
+
+networks:
+  db:
+    driver: bridge
 
 volumes:
-  ${WHALE_NAME}_db_data:
-  ${WHALE_NAME}_fa_config:
+  db_data:
+  fa_config:
