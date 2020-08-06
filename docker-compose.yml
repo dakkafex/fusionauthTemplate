@@ -1,27 +1,40 @@
-version: '2.4'
-
+version: "2.4"
 services:
-  db:
-    image: postgres:9.6
-    environment:
-      PGDATA: /var/lib/postgresql/data/pgdata
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-# Un-comment to access the db service directly
-#    ports:
-#      - 5432:5432
-    networks:
-      - db
+  postgres:
+    image: mdillon/postgis:11
     restart: unless-stopped
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - whosthat_db_data:/var/lib/postgresql/data
+    networks:
+      whos_that:
+        aliases:
+          - postgres
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+  hasura:
+    image: hasura/graphql-engine:v1.3.0
+    ports:
+      - "8080"
+    depends_on:
+      - "postgres"
+    restart: unless-stopped
+    networks:
+      - whos_that
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/postgres
+      ## enable the console served by server
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true" # set to "false" to disable console
+      ## enable debugging mode. It is recommended to disable this in production
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      ## uncomment next line to set an admin secret
+      HASURA_GRAPHQL_ADMIN_SECRET: myTQ2ux$ybJAgqC&$Aue3QC8zU%^UfFzZz7!@
 
   fusionauth:
     image: fusionauth/fusionauth-app:latest
     depends_on:
-      - db
+      - "postgres"
     environment:
-      DATABASE_URL: jdbc:postgresql://db:5432/fusionauth
+      DATABASE_URL: jdbc:postgresql://postgres:5432/fusionauth
       DATABASE_ROOT_USER: ${POSTGRES_USER}
       DATABASE_ROOT_PASSWORD: ${POSTGRES_PASSWORD}
       DATABASE_USER: ${DATABASE_USER}
@@ -31,17 +44,20 @@ services:
       FUSIONAUTH_URL: http://fusionauth:9011
       FUSIONAUTH_RUNTIME_MODE: development
     networks:
-     - db
+      - whos_that
     restart: unless-stopped
     ports:
-      - 9011:9011
+      - "9011"
     volumes:
-      - fa_config:/usr/local/fusionauth/config
-
-networks:
-  db:
-    driver: bridge
+      - whosthat_fa_config:/usr/local/fusionauth/config
 
 volumes:
+  whosthat_db_data:
+  whosthat_fa_config:
+
+networks:
+  whos_that:
+    driver: bridge
+    name: whos_that:
   db_data:
   fa_config:
